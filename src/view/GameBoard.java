@@ -1,6 +1,8 @@
 package view;
 
 import model.dao.FilePath;
+import model.entities.enemies.Enemy;
+import model.entities.enemies.Fly;
 import model.map.GameMap;
 import model.map.MapPosition;
 
@@ -10,17 +12,20 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class GameBoard extends JPanel {
     private final GameMap map;
     private MapPosition playerPosition;
+    private ArrayList<Enemy> enemies;
     private int cellWidth;
     private int cellHeight;
     private BufferedImage picture;
 
-    public GameBoard(GameMap map, MapPosition playerPosition) {
+    public GameBoard(GameMap map, MapPosition playerPosition, ArrayList<Enemy> enemies) {
         this.map = map;
         this.playerPosition = playerPosition;
+        this.enemies = enemies;
         this.picture = null;
     }
 
@@ -48,7 +53,12 @@ public class GameBoard extends JPanel {
                     this.renderPlayer(g, new MapPosition(j, i));
                 }
 
-                /* TODO Check if is the position of any enemy */
+                /* Check if is the position of any enemy */
+                for(Enemy enemy : this.enemies) {
+                    if(enemy.getPosition().getX() == j && enemy.getPosition().getY() == i) {
+                        this.renderEnemy(g, enemy);
+                    }
+                }
             }
         }
     }
@@ -95,6 +105,24 @@ public class GameBoard extends JPanel {
     }
 
     /**
+     * Function to render an {@link Enemy} on the {@link GameMap}'s terrain.
+     * @param g Instance of {@link Graphics}.
+     * @param enemy {@link Enemy}'s position on the map.
+     */
+    private void renderEnemy(Graphics g, Enemy enemy) {
+        /* Check the enemy type to get the corresponding asset */
+        if(enemy instanceof Fly)  {
+            this.getAsset(FilePath.ASSET_ENEMY_FLY);
+        } else {
+            this.getAsset(FilePath.ASSET_ENEMY_SPIDER);
+        }
+
+        /* Paint the player */
+        g.drawImage(picture, this.cellWidth * enemy.getPosition().getX(),
+                this.cellHeight * enemy.getPosition().getY(), this.cellWidth, this.cellHeight, null);
+    }
+
+    /**
      * Function to get the picture of a specified asset.
      * @param assetPath Path of the asset.
      */
@@ -112,6 +140,16 @@ public class GameBoard extends JPanel {
      */
     public void updatePlayerPosition(MapPosition playerPosition) {
         this.playerPosition = playerPosition;
+
+        this.repaint();
+    }
+
+    /**
+     * Function to update the list of {@link Enemy}'s position on move and repaint the {@link GameBoard}.
+     * @param enemies List of {@link Enemy}.
+     */
+    public void updateEnemiesPosition(ArrayList<Enemy> enemies) {
+        this.enemies = enemies;
 
         this.repaint();
     }

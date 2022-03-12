@@ -4,6 +4,7 @@ import controller.KeyboardController;
 import model.dao.FilePath;
 import model.entities.Entity;
 import model.entities.EntityDirection;
+import model.entities.enemies.Enemy;
 import model.map.GameMap;
 import model.map.MapPosition;
 import model.entities.player.Player;
@@ -11,6 +12,8 @@ import model.entities.player.Player;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class View extends JFrame {
     private static final int ICON_WIDTH = 25;
@@ -20,7 +23,8 @@ public class View extends JFrame {
     public static final String CONTROL_LEFT = "CONTROL_LEFT";
     public static final String CONTROL_RIGHT = "CONTROL_RIGHT";
     private final GameMap map;
-    private Player player;
+    private final Player player;
+    private final ArrayList<Enemy> enemies;
     private HealthBar healthBar;
     private GameBoard gameBoard;
     private JButton controlUpButton;
@@ -28,15 +32,22 @@ public class View extends JFrame {
     private JButton controlLeftButton;
     private JButton controlRightButton;
 
-    public View(GameMap map, Player player) {
+    public View(GameMap map, Player player, ArrayList<Enemy> enemies) {
         this.map = map;
         this.player = player;
+        this.enemies = enemies;
+
+        this.startEnemies();
 
         this.configureWindow();
         this.renderHealthBar();
         this.renderGame();
         this.renderDirectionButtons();
         this.configureKeyboardListener();
+    }
+
+    private void startEnemies() {
+
     }
 
     /**
@@ -61,7 +72,7 @@ public class View extends JFrame {
      * Function to render the {@link GameBoard}.
      */
     private void renderGame() {
-        this.gameBoard = new GameBoard(this.map, this.player.getPosition());
+        this.gameBoard = new GameBoard(this.map, this.player.getPosition(), this.enemies);
 
         this.add(this.gameBoard, BorderLayout.CENTER);
     }
@@ -171,6 +182,21 @@ public class View extends JFrame {
     }
 
     /**
+     * Function to check if the {@link Player} is on the same cell as an {@link Enemy}.
+     * @return The {@link Enemy} attacking the {@link Player} or null.
+     */
+    public Enemy isPlayerAttackedByEnemy() {
+        for(Enemy enemy : this.enemies) {
+            if(this.player.getPosition().getX() == enemy.getPosition().getX() &&
+                    this.player.getPosition().getY() == enemy.getPosition().getY()) {
+                return enemy;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Function to check whether an {@link Entity} can move to a desired {@link EntityDirection}.
      * @param entityDirection {@link Entity}'s desired next move direction.
      * @return Result of the checkup.
@@ -213,7 +239,11 @@ public class View extends JFrame {
      * @param damage Amount of damage to cause to the {@link Player}.
      */
     public void damagePlayer(int damage) {
-        this.player.setHealth(this.player.getHealth() - damage);
+        if(this.player.getHealth() < damage) {
+            this.player.setHealth(0);
+        } else {
+            this.player.setHealth(this.player.getHealth() - damage);
+        }
     }
 
     /**
@@ -236,7 +266,27 @@ public class View extends JFrame {
                 this.damagePlayer(GameMap.SPIKES_CELL_DAMAGE);
             }
 
-            /* TODO Check if player has been attacked by an enemy */
+            /* Check if player has been attacked by an enemy */
+            if(this.isPlayerAttackedByEnemy() != null) {
+                this.damagePlayer(Objects.requireNonNull(this.isPlayerAttackedByEnemy()).getDamage());
+            }
+        }
+    }
+
+    /**
+     * Function to move an {@link Enemy} to a desired {@link EntityDirection}.
+     * @param enemy The {@link Enemy} that is going to move.
+     */
+    public void moveEnemy(Enemy enemy) {
+        EntityDirection enemyDirection = enemy.getLastMovement();
+
+        if(this.canEntityMove(this.player.getPosition(), enemyDirection)) {
+            switch (enemyDirection) {
+                case UP -> enemy.getPosition().setY(enemy.getPosition().getY() - 1);
+                case DOWN -> enemy.getPosition().setY(enemy.getPosition().getY() + 1);
+                case RIGHT -> enemy.getPosition().setX(enemy.getPosition().getX() + 1);
+                case LEFT -> enemy.getPosition().setX(enemy.getPosition().getX() - 1);
+            }
         }
     }
 
@@ -256,7 +306,7 @@ public class View extends JFrame {
     }
 
     /**
-     * Function to update the {@link GameBoard}.
+     * Function to update the {@link GameBoard} on {@link Player} move.
      */
     private void updatePlayerPosition() {
         this.gameBoard.updatePlayerPosition(this.player.getPosition());
@@ -279,6 +329,13 @@ public class View extends JFrame {
         if(this.hasPlayerWon()) {
             this.showDialog("YOU WON", "Congratulations for reaching the end!", true);
         }
+    }
+
+    /**
+     * Function to update the {@link GameBoard} on {@link Enemy} move.
+     */
+    public void updateEnemies() {
+        this.gameBoard.updateEnemiesPosition(this.enemies);
     }
 
     /**
@@ -333,5 +390,21 @@ public class View extends JFrame {
         this.controlDownButton.setEnabled(false);
         this.controlLeftButton.setEnabled(false);
         this.controlRightButton.setEnabled(false);
+    }
+
+    /**
+     * Getter of the list of {@link Enemy}.
+     * @return List of enemies.
+     */
+    public ArrayList<Enemy> getEnemies() {
+        return enemies;
+    }
+
+    /**
+     * Getter of the {@link Player}.
+     * @return The {@link Player}.
+     */
+    public Player getPlayer() {
+        return player;
     }
 }
