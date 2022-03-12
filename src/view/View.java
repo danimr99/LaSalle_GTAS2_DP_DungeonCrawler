@@ -265,11 +265,6 @@ public class View extends JFrame {
             if(this.isSpikesCell(playerPosition)) {
                 this.damagePlayer(GameMap.SPIKES_CELL_DAMAGE);
             }
-
-            /* Check if player has been attacked by an enemy */
-            if(this.isPlayerAttackedByEnemy() != null) {
-                this.damagePlayer(Objects.requireNonNull(this.isPlayerAttackedByEnemy()).getDamage());
-            }
         }
     }
 

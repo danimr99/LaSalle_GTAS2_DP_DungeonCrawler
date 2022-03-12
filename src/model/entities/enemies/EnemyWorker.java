@@ -3,16 +3,14 @@ package model.entities.enemies;
 import view.View;
 
 public class EnemyWorker implements Runnable {
-    private View view;
-    private Enemy enemy;
-    private EnemyMovementListener listener;
-    private boolean keepWorking;
+    private final View view;
+    private final Enemy enemy;
+    private final EnemyMovementListener listener;
 
     public EnemyWorker(View view, Enemy enemy, EnemyMovementListener listener) {
         this.view = view;
         this.enemy = enemy;
         this.listener = listener;
-        this.keepWorking = true;
     }
 
     /**
@@ -28,7 +26,7 @@ public class EnemyWorker implements Runnable {
      */
     @Override
     public void run() {
-        while (this.keepWorking) {
+        while (true) {
             /* Check if enemy can continue moving on the same direction as the last movement */
             if(this.view.canEntityMove(this.enemy.getPosition(), enemy.getLastMovement())) {
                 this.view.moveEnemy(this.enemy);
